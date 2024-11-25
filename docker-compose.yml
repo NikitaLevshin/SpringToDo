@@ -1,0 +1,47 @@
+services:
+  database:
+    image: postgres:15
+    container_name: postgres_todo
+    environment:
+      POSTGRES_DB: todo
+      POSTGRES_USER: todoadmin
+      POSTGRES_PASSWORD: todopass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+
+  redis:
+    image: redis:7
+    container_name: redis_todo
+    ports:
+      - "6379:6379"
+    networks:
+      - app_network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: spring_todo
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/todo
+      SPRING_DATASOURCE_USERNAME: todoadmin
+      SPRING_DATASOURCE_PASSWORD: todopass
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_LIQUIBASE_CHANGE_LOG: db/changelog/main-changelog.xml
+    depends_on:
+      - database
+      - redis
+    networks:
+      - app_network
+
+volumes:
+  postgres_data:
+
+networks:
+  app_network:
