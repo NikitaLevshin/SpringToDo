@@ -1,5 +1,6 @@
 package com.emobile.springtodo.model;
 
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -9,9 +10,14 @@ import java.util.Objects;
 @Getter
 @Setter
 @AllArgsConstructor
+@Entity
+@Table(name = "task")
 public class Task {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
+    @Column(name = "title", nullable = false)
     private String title;
     private String description;
 

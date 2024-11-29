@@ -1,20 +1,24 @@
 package com.emobile.springtodo.repository;
 
 import com.emobile.springtodo.model.Task;
-import org.junit.jupiter.api.Test;
+import jakarta.transaction.Transactional;
+import org.hibernate.SessionFactory;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.hibernate.Session;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@ActiveProfiles("test")
 @SpringBootTest
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@Transactional
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class TaskRepositoryTest {
 
     @Autowired
@@ -35,6 +39,7 @@ public class TaskRepositoryTest {
         Task task = new Task(0, "Test Task", "Description");
         Task createdTask = taskRepository.create(task);
 
+
         Optional<Task> foundTask = taskRepository.findById(createdTask.getId());
         assertTrue(foundTask.isPresent());
         assertEquals(createdTask.getId(), foundTask.get().getId());
@@ -42,11 +47,15 @@ public class TaskRepositoryTest {
     }
 
     @Test
+    @Order(1)
     public void findAllTasksTest() {
         taskRepository.create(new Task(0, "Task 1", "Description 1"));
         taskRepository.create(new Task(0, "Task 2", "Description 2"));
 
         List<Task> tasks = taskRepository.findAll(10, 0);
+        for (Task task : tasks) {
+            System.out.println(task.getTitle());
+        }
         assertEquals(2, tasks.size());
         assertEquals("Task 1", tasks.get(0).getTitle());
         assertEquals("Task 2", tasks.get(1).getTitle());

@@ -1,12 +1,12 @@
 package com.emobile.springtodo.repository;
 
-import com.emobile.springtodo.mapper.TaskMapper;
+import com.emobile.springtodo.exception.TaskNotFoundException;
 import com.emobile.springtodo.model.Task;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -16,44 +16,57 @@ import java.util.Optional;
 @Slf4j
 public class TaskRepository {
 
-    private final JdbcTemplate jdbcTemplate;
+    private final SessionFactory sessionFactory;
 
     @Autowired
-    public TaskRepository(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+    public TaskRepository(SessionFactory sessionFactory) {
+        this.sessionFactory = sessionFactory;
     }
 
     public Optional<Task> findById(Long id) {
-        String sql = "SELECT * FROM task WHERE id = ?";
-        try {
-            return Optional.of(jdbcTemplate.queryForObject(sql, TaskMapper::mapRowToTask, id));
-        } catch (EmptyResultDataAccessException e) {
-            return Optional.empty();
+        try (Session session = sessionFactory.openSession()) {
+            Query<Task> query = session.createQuery("from Task where id = :id", Task.class);
+            query.setParameter("id", id);
+            return Optional.ofNullable(query.getSingleResultOrNull());
         }
     }
 
     public List<Task> findAll(int limit, int offset) {
-        String sql = "SELECT * FROM task LIMIT ? OFFSET ?";
-        return jdbcTemplate.query(sql, TaskMapper::mapRowToTask, limit, offset);
+        try (Session session = sessionFactory.openSession()) {
+            Query<Task> query = session.createQuery("from Task", Task.class);
+            query.setFirstResult(offset);
+            query.setMaxResults(limit);
+            return query.getResultList();
+        }
     }
 
     public Task create(Task task) {
-        SimpleJdbcInsert insert = new SimpleJdbcInsert(jdbcTemplate)
-                .withTableName("task")
-                .usingGeneratedKeyColumns("id");
-        long id = insert.executeAndReturnKey(TaskMapper.toMap(task)).longValue();
-        task.setId(id);
-        return task;
+        try (Session session = sessionFactory.openSession()) {
+            session.beginTransaction();
+            session.persist(task);
+            session.getTransaction().commit();
+            return task;
+        }
     }
 
     public void delete(Long id) {
-        String sql = "DELETE FROM task WHERE id = ?";
-        jdbcTemplate.update(sql, id);
+        try (Session session = sessionFactory.openSession()) {
+            session.beginTransaction();
+
+            Task task = findById(id).orElseThrow(
+                    () -> new TaskNotFoundException("Task with id " + id + " not found")
+            );
+            session.remove(task);
+            session.getTransaction().commit();
+        }
     }
 
     public Task update(Task task) {
-        String sql = "UPDATE task SET title = ?, description = ? WHERE id = ?";
-        jdbcTemplate.update(sql, task.getTitle(), task.getDescription(), task.getId());
-        return task;
+        try (Session session = sessionFactory.openSession()) {
+            session.beginTransaction();
+            session.merge(task);
+            session.getTransaction().commit();
+            return task;
+        }
     }
 }
