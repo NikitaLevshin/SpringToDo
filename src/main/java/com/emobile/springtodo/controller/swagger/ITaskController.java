@@ -11,6 +11,10 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -34,7 +38,7 @@ public interface ITaskController {
                 )
             }
     )
-    TaskDto createTask(NewTaskDto newTaskDto);
+    TaskDto createTask(@RequestBody @Valid NewTaskDto newTaskDto);
 
     @Operation(
             summary = "Получение задачи по идентификатору",
@@ -61,8 +65,9 @@ public interface ITaskController {
     @Operation(
             summary = "Получение списка всех задач"
     )
-    List<TaskDto> getTasks(@Parameter(description = "Лимит на количество выводимых задач") int limit,
-                           @Parameter(description = "Сколько задач пропустить перед выводом") int offset);
+    List<TaskDto> getTasks(@Parameter(description = "Лимит на количество выводимых задач")
+                           @Min(1) int size,
+                           @Parameter(description = "Сколько задач пропустить перед выводом") int page);
 
     @Operation(
             summary = "Обновление задачи",
@@ -81,7 +86,7 @@ public interface ITaskController {
             }
     )
     TaskDto updateTask(@Parameter(description = "Идентификатор задачи", required = true) int id,
-                       UpdateTaskDto updateTaskDto);
+                       @RequestBody @Valid UpdateTaskDto updateTaskDto);
 
     @Operation(
             summary = "Удаление задачи",

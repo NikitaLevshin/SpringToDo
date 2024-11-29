@@ -7,6 +7,8 @@ import com.emobile.springtodo.repository.TaskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -25,7 +27,7 @@ public class TaskServiceImpl implements TaskService {
 
     @CacheEvict(value = "task", allEntries = true)
     public Task createTask(Task task) {
-        return taskRepository.create(task);
+        return taskRepository.save(task);
     }
 
     @Cacheable(value = "task", key = "#id")
@@ -34,9 +36,10 @@ public class TaskServiceImpl implements TaskService {
                 () -> new TaskNotFoundException("Task with id " + id + " not found"));
     }
 
-    @Cacheable(value = "task", key = "{#limit, #offset}")
-    public List<Task> findAll(int limit, int offset) {
-        return taskRepository.findAll(limit, offset);
+    @Cacheable(value = "task", key = "{page, size}")
+    public List<Task> findAll(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return taskRepository.findAllTasks(pageable);
     }
 
     @CacheEvict(value = "task", allEntries = true)
@@ -50,7 +53,7 @@ public class TaskServiceImpl implements TaskService {
             if (!Objects.equals(updateTaskDto.getDescription(), task.getDescription()) && updateTaskDto.getDescription() != null) {
                 task.setDescription(updateTaskDto.getDescription());
             }
-            return taskRepository.update(task);
+            return taskRepository.save(task);
         } else {
             throw new TaskNotFoundException("Task with id " + id + " not found");
         }
@@ -58,6 +61,6 @@ public class TaskServiceImpl implements TaskService {
 
     @CacheEvict(value = "task", key = "#id")
     public void delete(long id) {
-        taskRepository.delete(id);
+        taskRepository.deleteById(id);
     }
 }

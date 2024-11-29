@@ -2,13 +2,15 @@ package com.emobile.springtodo.repository;
 
 import com.emobile.springtodo.model.Task;
 import jakarta.transaction.Transactional;
-import org.hibernate.SessionFactory;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ActiveProfiles;
-import org.hibernate.Session;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,7 +30,7 @@ public class TaskRepositoryTest {
     @Test
     public void createTaskTest() {
         Task task = new Task(0, "Test Task", "Description");
-        Task createdTask = taskRepository.create(task);
+        Task createdTask = taskRepository.save(task);
 
         assertEquals("Test Task", createdTask.getTitle());
         assertEquals("Description", createdTask.getDescription());
@@ -37,7 +39,7 @@ public class TaskRepositoryTest {
     @Test
     public void findByIdTest() {
         Task task = new Task(0, "Test Task", "Description");
-        Task createdTask = taskRepository.create(task);
+        Task createdTask = taskRepository.save(task);
 
 
         Optional<Task> foundTask = taskRepository.findById(createdTask.getId());
@@ -49,10 +51,11 @@ public class TaskRepositoryTest {
     @Test
     @Order(1)
     public void findAllTasksTest() {
-        taskRepository.create(new Task(0, "Task 1", "Description 1"));
-        taskRepository.create(new Task(0, "Task 2", "Description 2"));
+        taskRepository.save(new Task(0, "Task 1", "Description 1"));
+        taskRepository.save(new Task(0, "Task 2", "Description 2"));
 
-        List<Task> tasks = taskRepository.findAll(10, 0);
+        Pageable pageable = PageRequest.of(0, 10);
+        List<Task> tasks = taskRepository.findAllTasks(pageable);
         for (Task task : tasks) {
             System.out.println(task.getTitle());
         }
@@ -64,11 +67,11 @@ public class TaskRepositoryTest {
     @Test
     public void updateTaskTest() {
         Task task = new Task(0, "Old Title", "Old Description");
-        Task createdTask = taskRepository.create(task);
+        Task createdTask = taskRepository.save(task);
 
         createdTask.setTitle("New Title");
         createdTask.setDescription("New Description");
-        Task updatedTask = taskRepository.update(createdTask);
+        Task updatedTask = taskRepository.save(createdTask);
 
         assertEquals("New Title", updatedTask.getTitle());
         assertEquals("New Description", updatedTask.getDescription());
@@ -77,9 +80,9 @@ public class TaskRepositoryTest {
     @Test
     public void deleteTaskTest() {
         Task task = new Task(0, "Task to Delete", "Description");
-        Task createdTask = taskRepository.create(task);
+        Task createdTask = taskRepository.save(task);
 
-        taskRepository.delete(createdTask.getId());
+        taskRepository.deleteById(createdTask.getId());
 
         Optional<Task> foundTask = taskRepository.findById(createdTask.getId());
         assertFalse(foundTask.isPresent());

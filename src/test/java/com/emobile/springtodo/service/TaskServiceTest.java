@@ -29,7 +29,7 @@ public class TaskServiceTest {
         Task task = new Task("Test Task", "Description");
         Task savedTask = new Task(1L, "Test Task", "Description");
 
-        when(taskRepository.create(task)).thenReturn(savedTask);
+        when(taskRepository.save(task)).thenReturn(savedTask);
 
         Task result = taskService.createTask(task);
         assertEquals(1L, result.getId());
@@ -52,7 +52,7 @@ public class TaskServiceTest {
         UpdateTaskDto updateTaskDto = new UpdateTaskDto("New Title", null);
 
         when(taskRepository.findById(1L)).thenReturn(Optional.of(existingTask));
-        when(taskRepository.update(any(Task.class))).thenAnswer(i -> i.getArgument(0));
+        when(taskRepository.save(any(Task.class))).thenAnswer(i -> i.getArgument(0));
 
         Task result = taskService.updateTask(1L, updateTaskDto);
 
